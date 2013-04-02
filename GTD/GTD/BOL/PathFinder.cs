@@ -16,6 +16,8 @@ namespace GTD.BOL
 
         private static PathFinder _instance;
 
+        public List<Vector2> Path;
+
         public static PathFinder Instance
         {
             get
@@ -24,6 +26,11 @@ namespace GTD.BOL
                     _instance = new PathFinder(map);
                 return _instance;
             }
+        }
+
+        public static void RebuildMap()
+        {
+            _instance = new PathFinder(map);
         }
 
         private int levelWidth;
@@ -44,7 +51,7 @@ namespace GTD.BOL
 
             for (int x = 0; x < levelWidth; ++x)
             {
-                for (int y = 1; y < levelHeight; ++y)
+                for (int y = 0; y < levelHeight; ++y)
                 {
                     SearchNode node = new SearchNode();
 
@@ -163,7 +170,7 @@ namespace GTD.BOL
         /// Use the parent field of the search nodes to trace
         /// a path from the end node to the start node.
         /// </summary>
-        private List<SearchNode> FindFinalPath(SearchNode startNode, SearchNode endNode)
+        private List<Vector2> FindFinalPath(SearchNode startNode, SearchNode endNode)
         {
             closedList.Add(endNode);
 
@@ -179,12 +186,12 @@ namespace GTD.BOL
 
      
 
-            List<SearchNode> finalPath = new List<SearchNode>();
+            List<Vector2> finalPath = new List<Vector2>();
 
             // Reverse the path and transform into world space.
             for (int i = closedList.Count - 1; i >= 0; i--)
             {
-                finalPath.Add(closedList[i]);
+                finalPath.Add(new Vector2(closedList[i].Position.X * 48.0f + Map.X_OFFSET, closedList[i].Position.Y * 48.0f + Map.Y_OFFSET));
             }
 
             return finalPath;
@@ -193,12 +200,12 @@ namespace GTD.BOL
         /// <summary>
         /// Finds the optimal path from one point to another.
         /// </summary>
-        public List<SearchNode> FindPath(Point startPoint, Point endPoint)
+        public List<Vector2> FindPath(Point startPoint, Point endPoint)
         {
             // Only try to find a path if the start and end points are different.
             if (startPoint == endPoint)
             {
-                return new List<SearchNode>();
+                return new List<Vector2>();
             }
 
             /////////////////////////////////////////////////////////////////////
@@ -252,7 +259,7 @@ namespace GTD.BOL
                 if (currentNode == endNode)
                 {
                     // Trace our path back to the start.
-                    return FindFinalPath(startNode, endNode);
+                    Path = FindFinalPath(startNode, endNode);
                 }
 
                 /////////////////////////////////////////////////////////////////
@@ -329,7 +336,7 @@ namespace GTD.BOL
             }
 
             // No path could be found.
-            return new List<SearchNode>();
+            return new List<Vector2>();
         }
     }
 }

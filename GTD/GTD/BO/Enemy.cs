@@ -1,6 +1,7 @@
 ﻿using Microsoft.Xna.Framework;
 using Microsoft.Xna.Framework.Graphics;
 using System.Xml.Serialization;
+using GTD.BO;
 
 public class Enemy
 {
@@ -83,5 +84,19 @@ public class Enemy
     public virtual void Draw(SpriteBatch spriteBatch)
     {
         spriteBatch.Draw(Texture, Position, Color.Blue);
+    }
+
+    public virtual float OffsetX()
+    {
+        int difference = (int)Constants.MAP_CELL_WIDTH - Texture.Width;
+
+        return difference / 2;
+    }
+
+    public virtual float OffsetY()
+    {
+        int difference = (int)Constants.MAP_CELL_HEIGHT - Texture.Height;
+
+        return difference / 2;
     }
 }

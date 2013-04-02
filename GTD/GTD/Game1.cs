@@ -25,7 +25,10 @@ namespace GTD
         Grid grid;
         Texture2D greenSquare;
         Map map;
-        PathFinder pathFinder;
+
+        Tower tower;
+
+        EnemyManager enemyManager;
 
         Enemy enemy;
 
@@ -75,9 +78,13 @@ namespace GTD
             enemy = new Enemy(@"whiteSquare");
             enemy.Position = new Vector2(48 * 3.0f, 48 * 3.0f);
             enemy.Speed = 550f;
-            map = new Map(26, 15);
-            map.squareTexture = Content.Load<Texture2D>(@"whiteSquare");
-            pathFinder = new PathFinder(map);
+            map = new Map(26, 14);
+            map.squareTexture = Content.Load<Texture2D>(@"GrassTile1");
+            PathFinder.map = map;
+            PathFinder.RebuildMap();
+            enemyManager = new EnemyManager();
+
+            tower = new Tower("Turret", Vector2.Zero);
         }
 
         /// <summary>
@@ -108,97 +115,17 @@ namespace GTD
             if (y > 14)
                 y = 14;
 
-            if (Mouse.GetState().RightButton == ButtonState.Pressed)
+            if (prevKeyboardState.IsKeyDown(Keys.P) && Keyboard.GetState().IsKeyUp(Keys.P))
             {
-                map.map[x, y].walkable = false;
-                pathFinder = new PathFinder(map);
-
-                foreach (Cell cell in map.map)
-                {
-                    cell.bestPath = false;
-                }
-
-                result = pathFinder.FindPath(new Point((int)startPosition.X, (int)startPosition.Y),
-                    new Point((int)endPosition.X, (int)endPosition.Y));
-
-                foreach (SearchNode node in result)
-                {
-                    map.map[node.Position.X, node.Position.Y].bestPath = true;
-                }
-                
-            }
-            else if (Mouse.GetState().LeftButton == ButtonState.Pressed)
-            {
-
-                map.map[x, y].walkable = true;
-                pathFinder = new PathFinder(map);
-
-                foreach (Cell cell in map.map)
-                {
-                    cell.bestPath = false;
-                }
-
-                result = pathFinder.FindPath(new Point((int)startPosition.X, (int)startPosition.Y),
-                    new Point((int)endPosition.X, (int)endPosition.Y));
-
-                foreach (SearchNode node in result)
-                {
-                    map.map[node.Position.X, node.Position.Y].bestPath = true;
-                }
-            }
-            else if (prevKeyboardState.IsKeyDown(Keys.S) && Keyboard.GetState().IsKeyUp(Keys.S))
-            {
-                startPosition = new Vector2(x, y);
-            }
-            else if (prevKeyboardState.IsKeyDown(Keys.E) && Keyboard.GetState().IsKeyUp(Keys.E))
-            {
-                endPosition = new Vector2(x, y);
-            }
-            else if (prevKeyboardState.IsKeyDown(Keys.P) && Keyboard.GetState().IsKeyUp(Keys.P))
-            {
-                enemy.Position = startPosition * 48.0f;
-
-                foreach (Cell cell in map.map)
-                {
-                    cell.bestPath = false;
-                }
-
-                result = pathFinder.FindPath(new Point((int)startPosition.X, (int)startPosition.Y), 
-                    new Point((int)endPosition.X, (int)endPosition.Y));
-
-                foreach (SearchNode node in result)
-                {
-                    map.map[node.Position.X, node.Position.Y].bestPath = true;
-                }
-
-                if (result.Count > 0)
-                {
-                    enemy.CurrentWaypoint = new Vector2(result[0].Position.X * 48, result[0].Position.Y * 48);
-                    enemy.CurrentWaypointNumber = 0;
-                }
-            }
-           
-            /* move our enemy along */
-            enemy.Update(gameTime);
-
-            /* If we're close enough to the next waypoint, snap to it and set a new waypoint */
-            if ((enemy.Position - enemy.CurrentWaypoint).Length() < 3.0f)
-            {
-                enemy.Position = enemy.CurrentWaypoint;
-                /* check to ensure we're not at the end */
-                if (enemy.CurrentWaypointNumber < result.Count - 1)
-                {
-                    /* increment the current waypoint # and assign a new current waypoint */
-                    enemy.CurrentWaypointNumber++;
-                    enemy.CurrentWaypoint = new Vector2(result[enemy.CurrentWaypointNumber].Position.X * 48.0f,
-                        result[enemy.CurrentWaypointNumber].Position.Y * 48.0f);
-                }
-                else
-                {
-                    /* done */
-                }
+                enemyManager.AddEnemyTest();
             }
 
+            if (Mouse.GetState().LeftButton == ButtonState.Pressed)
+            {
+                tower.Position = new Vector2(Mouse.GetState().X, Mouse.GetState().Y);
+            }
+
+            enemyManager.Update(gameTime);
             // TODO: Add your update logic here
             prevMouseState = Mouse.GetState();
             prevKeyboardState = Keyboard.GetState();
@@ -218,8 +145,9 @@ namespace GTD
             spriteBatch.Begin();
             //spriteBatch.Draw(greenSquare, DrawLocation, Color.White);
             map.Draw(spriteBatch);
-            grid.Draw(spriteBatch);
-            enemy.Draw(spriteBatch);
+            //grid.Draw(spriteBatch);
+            enemyManager.Draw(spriteBatch);
+            tower.Draw(spriteBatch);
             spriteBatch.End();
 
             base.Draw(gameTime);
